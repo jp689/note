@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina AI - 深度搜索与对话</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#271811",
+                        "surface-container-high": "#fee2d7",
+                        "surface-dim": "#f0d4c9",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#89726b",
+                        "outline-variant": "#ddc0b9",
+                        "inverse-primary": "#ffb59f",
+                        "surface-container-highest": "#f9ddd1",
+                        "secondary-fixed": "#ffdcc4",
+                        "on-primary-fixed-variant": "#802a0e",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#f9ddd1",
+                        "on-secondary-fixed": "#2f1400",
+                        "tertiary-fixed-dim": "#ffb59c",
+                        "surface": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "background": "#fff8f6",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fff8f6",
+                        "on-surface-variant": "#56423d",
+                        "surface-container-low": "#fff1eb",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-container": "#794920",
+                        "on-secondary-fixed-variant": "#693c13",
+                        "tertiary": "#8c4a32",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#380c00",
+                        "surface-container": "#ffeae1",
+                        "tertiary-container": "#a96248",
+                        "primary": "#9c3e21",
+                        "on-tertiary-fixed-variant": "#72351f",
+                        "primary-container": "#bc5637",
+                        "inverse-surface": "#3d2d25",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#ffdbcf",
+                        "secondary-fixed-dim": "#fbb886",
+                        "primary-fixed-dim": "#ffb59f",
+                        "secondary-container": "#febb88",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "on-primary-fixed": "#3a0a00",
+                        "inverse-on-surface": "#ffede6",
+                        "secondary": "#855229",
+                        "surface-tint": "#9f4123",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#ffdbd1",
+                        "on-surface": "#271811"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-desktop": "48px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "headline-xl-mobile": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .sunset-gradient {
+            background: linear-gradient(135deg, #9c3e21 0%, #d96c4b 100%);
+        }
+        .sunset-text-gradient {
+            background: linear-gradient(135deg, #9c3e21 0%, #d96c4b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ai-chip-warm {
+            background: rgba(188, 86, 55, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col md:flex-row">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex flex-col h-full w-sidebar-width fixed left-0 top-0 bg-surface-container-low/80 backdrop-blur-xl border-r border-outline-variant/30 p-base space-y-4 z-40">
+<div class="flex items-center gap-3 px-2 py-4">
+<div class="w-10 h-10 sunset-gradient rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Lumina</h2>
+<p class="text-label-sm font-label-sm text-outline">AI 避风港</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container transition-all rounded-xl group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">工作台</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container transition-all rounded-xl group" href="#">
+<span class="material-symbols-outlined" data-icon="folder_shared">folder_shared</span>
+<span class="font-body-md">知识库</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-xl font-bold transition-transform active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="font-body-md">AI 助手</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container transition-all rounded-xl group" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">设置</span>
+</a>
+</nav>
+<div class="pt-4 mt-auto border-t border-outline-variant/20 space-y-1">
+<div class="p-4 rounded-xl bg-primary/5 border border-primary/10 mb-4">
+<p class="text-label-md font-label-md text-primary font-bold mb-1">升级至专业版</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">解锁深度推理与无限笔记。</p>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-md">帮助</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-error hover:bg-error/5 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md">退出登录</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-sidebar-width flex flex-col md:flex-row h-screen relative overflow-hidden">
+<!-- TopNavBar (Shared Component - Web Header Variant) -->
+<header class="md:hidden flex justify-between items-center px-margin-mobile w-full h-16 bg-surface-container-low/80 backdrop-blur-xl border-b border-outline-variant/30 sticky top-0 z-50">
+<div class="font-headline-md text-headline-md font-bold text-primary">Lumina AI</div>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-outline" data-icon="notifications">notifications</span>
+<img alt="用户头像" class="w-8 h-8 rounded-full border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnDi0ipI-8vmVY6yy8eQ80rOVCAwa3SZzr3WjyL8NbpQy172e5nW4DbVIYuMfMrv9xDFToDT3Nh9CSdVtV8lFdIbnpMBPFhGU4TNPsMqvyutJj3jzFLAYTMxD1qD6yjppDnUILXg7EVi88FnsO1Q9n_P1P35jko02UT6AYW5VACBijB-lXgSYbYta8p5Un9pF_sZ4bDeUn-hwVDW8nGEm97cOi6cfO8brzPUZmT-CDzVbXirhewJQJB98CUK_c4HbE8tZzOQNnGlM"/>
+</div>
+</header>
+<!-- Chat Interaction Area -->
+<section class="flex-1 flex flex-col h-full bg-background z-10 overflow-y-auto">
+<div class="flex-1 flex flex-col items-center justify-center px-margin-mobile md:px-gutter max-w-[840px] mx-auto w-full py-12">
+<!-- Welcome Title -->
+<div class="text-center mb-12">
+<div class="inline-flex items-center justify-center w-20 h-20 sunset-gradient rounded-[24px] mb-8 shadow-xl shadow-primary/10">
+<span class="material-symbols-outlined text-white text-5xl" data-icon="sparkles" style="font-variation-settings: 'FILL' 1;">Sparkle</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl sunset-text-gradient mb-4">深度搜索与对话</h1>
+<p class="font-body-lg text-body-lg text-outline">解锁您工作区的集体智慧。</p>
+</div>
+<!-- Central Search Input Area -->
+<div class="w-full relative">
+<div class="glass border border-outline-variant/50 rounded-[28px] p-2 shadow-2xl shadow-surface-dim/40 ring-1 ring-white/60 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<div class="flex items-center gap-4 px-4 py-2">
+<span class="material-symbols-outlined text-primary/60" data-icon="search">search</span>
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 text-body-lg py-3 resize-none h-16 text-on-surface placeholder:text-outline/60" placeholder="针对您的笔记提问..."></textarea>
+<button class="w-12 h-12 sunset-gradient rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant/30 px-5 py-3 bg-surface-container-lowest/40 rounded-b-[28px]">
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-surface-container text-outline text-label-md transition-colors font-medium">
+<span class="material-symbols-outlined text-[20px]" data-icon="attach_file">attach_file</span>
+<span>上下文</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-surface-container text-outline text-label-md transition-colors font-medium">
+<span class="material-symbols-outlined text-[20px]" data-icon="language">language</span>
+<span>网络访问</span>
+</button>
+</div>
+<div class="text-label-sm text-outline/70 font-medium">按 ⌘ + Enter 发送</div>
+</div>
+</div>
+</div>
+<!-- Suggested Prompts Grid -->
+<div class="mt-16 w-full">
+<p class="text-label-sm font-bold text-outline mb-6 uppercase tracking-[0.15em] px-1">推荐提示词</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<button class="flex items-start gap-4 p-6 rounded-[24px] bg-surface-container-lowest border border-outline-variant/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group">
+<div class="p-3 rounded-2xl ai-chip-warm text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="summarize" style="font-variation-settings: 'FILL' 1;">summarize</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">总结上次会议</h3>
+<p class="text-label-sm text-outline mt-1 leading-relaxed">获取 Q3 产品同步会议的关键要点。</p>
+</div>
+</button>
+<button class="flex items-start gap-4 p-6 rounded-[24px] bg-surface-container-lowest border border-outline-variant/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group">
+<div class="p-3 rounded-2xl ai-chip-warm text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="query_stats" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">查找关于项目 X 的笔记</h3>
+<p class="text-label-sm text-outline mt-1 leading-relaxed">整理 2023 年以来所有关于项目 X 的引用。</p>
+</div>
+</button>
+<button class="flex items-start gap-4 p-6 rounded-[24px] bg-surface-container-lowest border border-outline-variant/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group">
+<div class="p-3 rounded-2xl ai-chip-warm text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="edit_note" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">起草跟进邮件</h3>
+<p class="text-label-sm text-outline mt-1 leading-relaxed">根据客户反馈记录撰写一封邮件。</p>
+</div>
+</button>
+<button class="flex items-start gap-4 p-6 rounded-[24px] bg-surface-container-lowest border border-outline-variant/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group">
+<div class="p-3 rounded-2xl ai-chip-warm text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="lightbulb" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">综合研究成果</h3>
+<p class="text-label-sm text-outline mt-1 leading-relaxed">将 UX 研究与最近的工单进行交叉比对。</p>
+</div>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Side Context Preview -->
+<aside class="hidden xl:flex flex-col w-[400px] border-l border-outline-variant/30 bg-surface-container-lowest/50 backdrop-blur-md p-margin-desktop overflow-y-auto">
+<div class="flex items-center justify-between mb-8">
+<span class="text-label-sm font-bold text-outline uppercase tracking-widest">参考上下文</span>
+<button class="text-primary hover:bg-primary/5 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+<!-- Note Card Preview -->
+<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-[28px] p-7 shadow-lg shadow-surface-dim/20 ring-1 ring-surface-container-low">
+<div class="flex items-center gap-2 mb-6">
+<div class="w-2.5 h-2.5 rounded-full bg-secondary"></div>
+<span class="text-label-sm font-bold text-secondary tracking-wide">项目 X</span>
+<span class="text-outline text-label-sm ml-auto">2023年10月12日</span>
+</div>
+<h2 class="font-headline-md text-headline-md mb-6 text-on-surface">初始架构与范围</h2>
+<div class="space-y-5 text-body-md text-on-surface-variant leading-relaxed">
+<p>项目 X 的核心目标是革新 Lumina 生态系统中语义数据的存储方式...</p>
+<ul class="space-y-3 list-none">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] bg-primary/5 rounded-full" data-icon="check_circle">check_circle</span>
+<span>将向量数据库扩展至 1000 万个嵌入。</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] bg-primary/5 rounded-full" data-icon="check_circle">check_circle</span>
+<span>实现低于 100 毫秒的检索速度。</span>
+</li>
+</ul>
+<img alt="技术原理图示" class="w-full h-44 object-cover rounded-[20px] mt-6 ring-1 ring-outline-variant/20 shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU_PYWW42ZC1hm4Bu9c-WtQGSyRUndRMY9ZilpSx05FMsmCtB5RaHYWz2fdU_MptF6UAswr7nLF4ly5V-0FYTEcB5mFvL3FU2XU9bgULCvoz0G4sZ9O2diY3DV-Owb3bignH9KFVmLsTac8r66mTNTjRxdhBbOqxb2vjTyzsr4nqMi8jI5nmLt0hPRbg6wAC0T1fbrGXqSyW1cQ_wUTaUh7BPkz1bmdF0WlZs5vDqO0EuaHhBnTn5_4qGBvubMQHAj-QJNJzPfBow"/>
+<p class="mt-4">下一步工作涉及弥合推理引擎与前端 UI 之间的延迟...</p>
+</div>
+<div class="mt-8 pt-8 border-t border-outline-variant/20">
+<p class="text-label-sm text-outline font-bold mb-4 uppercase tracking-[0.1em]">关联实体</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-1.5 rounded-full bg-surface-container text-label-md text-on-surface-variant font-medium">#向量数据库</span>
+<span class="px-4 py-1.5 rounded-full bg-surface-container text-label-md text-on-surface-variant font-medium">#AI基础设施</span>
+<span class="px-4 py-1.5 rounded-full bg-surface-container text-label-md text-on-surface-variant font-medium">+3 更多</span>
+</div>
+</div>
+</div>
+<!-- Contextual Assistant Activity -->
+<div class="mt-12 px-2">
+<h4 class="font-label-md text-label-md text-on-surface font-bold mb-6">助手逻辑流程</h4>
+<div class="relative pl-7 space-y-8 before:content-[''] before:absolute before:left-[9px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant/20">
+<div class="relative">
+<div class="absolute -left-[27px] top-0 w-4.5 h-4.5 rounded-full border-2 border-primary bg-background shadow-sm"></div>
+<p class="text-label-sm font-bold text-primary">扫描近期笔记</p>
+<p class="text-label-sm text-outline mt-0.5">在 0.4 秒内处理了 142 条条目</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[27px] top-0 w-4.5 h-4.5 rounded-full border-2 border-secondary bg-background shadow-sm"></div>
+<p class="text-label-sm font-bold text-secondary">聚类“项目 X”</p>
+<p class="text-label-sm text-outline mt-0.5">识别出 3 个主要文档线程</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[27px] top-0 w-4.5 h-4.5 rounded-full border-2 border-outline/40 bg-background shadow-sm"></div>
+<p class="text-label-sm font-bold text-outline">准备就绪</p>
+<p class="text-label-sm text-outline mt-0.5">等待用户输入...</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Floating Mobile FAB -->
+<button class="md:hidden fixed bottom-24 right-6 w-16 h-16 sunset-gradient rounded-full shadow-2xl flex items-center justify-center text-white z-50">
+<span class="material-symbols-outlined text-3xl" data-icon="add" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-low/90 backdrop-blur-xl border-t border-outline-variant/30 px-6 py-4 flex justify-between items-center z-50">
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-label-sm font-medium">首页</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="folder_shared">folder_shared</span>
+<span class="text-label-sm font-medium">知识库</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="smart_toy" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="text-label-sm font-bold">助手</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-sm font-medium">设置</span>
+</div>
+</nav>
+</main>
+<!-- Warm Background Accents -->
+<div class="fixed top-[-5%] right-[-5%] w-[45%] h-[45%] rounded-full bg-primary/5 blur-[120px] -z-10 pointer-events-none"></div>
+<div class="fixed bottom-[-5%] left-[-5%] w-[35%] h-[35%] rounded-full bg-secondary/8 blur-[100px] -z-10 pointer-events-none"></div>
+</body></html>

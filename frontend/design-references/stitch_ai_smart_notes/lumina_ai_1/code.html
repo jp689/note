@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina AI - 笔记编辑器</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .editor-container {
+            max-width: 840px;
+        }
+        body {
+            background-color: #fff8f6;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#271811",
+                        "surface-container-high": "#fee2d7",
+                        "surface-dim": "#f0d4c9",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#89726b",
+                        "outline-variant": "#ddc0b9",
+                        "inverse-primary": "#ffb59f",
+                        "surface-container-highest": "#f9ddd1",
+                        "secondary-fixed": "#ffdcc4",
+                        "on-primary-fixed-variant": "#802a0e",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#f9ddd1",
+                        "on-secondary-fixed": "#2f1400",
+                        "tertiary-fixed-dim": "#ffb59c",
+                        "surface": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "background": "#fff8f6",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fff8f6",
+                        "on-surface-variant": "#56423d",
+                        "surface-container-low": "#fff1eb",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-container": "#794920",
+                        "on-secondary-fixed-variant": "#693c13",
+                        "tertiary": "#8c4a32",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#380c00",
+                        "surface-container": "#ffeae1",
+                        "tertiary-container": "#a96248",
+                        "primary": "#9c3e21",
+                        "on-tertiary-fixed-variant": "#72351f",
+                        "primary-container": "#bc5637",
+                        "inverse-surface": "#3d2d25",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#ffdbcf",
+                        "secondary-fixed-dim": "#fbb886",
+                        "primary-fixed-dim": "#ffb59f",
+                        "secondary-container": "#febb88",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "on-primary-fixed": "#3a0a00",
+                        "inverse-on-surface": "#ffede6",
+                        "secondary": "#855229",
+                        "surface-tint": "#9f4123",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#ffdbd1",
+                        "on-surface": "#271811"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-desktop": "48px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "headline-xl-mobile": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Top Navigation -->
+<nav class="bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 flex justify-between items-center px-margin-desktop w-full h-16 sticky top-0 z-50">
+<div class="flex items-center gap-base">
+<span class="material-symbols-outlined text-primary" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">Lumina AI</span>
+</div>
+<div class="hidden md:flex items-center gap-gutter">
+<a class="text-primary border-b-2 border-primary font-bold pb-1 font-body-md text-body-md" href="#">工作台</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md" href="#">编辑器</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md" href="#">资源库</a>
+</div>
+<div class="flex items-center gap-base">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+            新建笔记
+        </button>
+<div class="flex items-center gap-4 border-l border-outline-variant/30 ml-4 pl-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/50">
+<img alt="User profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmnr4U7R-C5qmgYMzOuxkXy9HlpVNVmJH7W2h1xiEbnj9ydOOxd8Cf62m36kEChxRE_6MYpv_Cn5n3sYXV2EGyo4n4QCde3vmh8oIY_Rlvo3nK3kRqgHh1zqBjF927jbkY9DCynekpEZjv4g42SdB00xzqR89j-FQMdrcL2Q7cT2LpNi5khG2poYV6For4Ik5PLuTn_akq-V_TA6_Bc_pHIB402RHtiB9hn3_19DZyXqB3Z0Bd4aQ-wOwiHYpG0EcgOsxbEDqNTZs"/>
+</div>
+</div>
+</div>
+</nav>
+<div class="flex h-[calc(100vh-64px)] overflow-hidden">
+<!-- Left Sidebar (Navigation) -->
+<aside class="w-sidebar-width h-full bg-surface-container-low border-r border-outline-variant/30 flex flex-col p-base space-y-4 shrink-0 hidden lg:flex">
+<div class="flex items-center gap-3 px-3 py-2 mb-4">
+<div class="w-8 h-8 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</div>
+<div>
+<div class="font-label-md font-bold text-primary">Lumina</div>
+<div class="text-[10px] text-outline uppercase tracking-widest font-bold">AI 避风港</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="bg-primary-container text-on-primary-container rounded-lg font-bold flex items-center gap-3 px-3 py-2 cursor-pointer transition-transform active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-body-md text-body-md">工作台</span>
+</div>
+<div class="text-on-surface-variant hover:bg-surface-container-high rounded-lg flex items-center gap-3 px-3 py-2 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="folder_shared">folder_shared</span>
+<span class="font-body-md text-body-md">资源库</span>
+</div>
+<div class="text-on-surface-variant hover:bg-surface-container-high rounded-lg flex items-center gap-3 px-3 py-2 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-body-md text-body-md">AI 助手</span>
+</div>
+<div class="text-on-surface-variant hover:bg-surface-container-high rounded-lg flex items-center gap-3 px-3 py-2 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</div>
+</nav>
+<div class="bg-primary/5 p-4 rounded-xl border border-primary/10">
+<div class="text-primary font-bold text-label-md mb-1">升级至 Pro 版</div>
+<div class="text-on-surface-variant text-[12px] mb-3">获得更高级的 AI 推理能力及无限工作空间存储。</div>
+<button class="w-full bg-primary text-on-primary py-2 rounded-lg text-label-sm font-bold">立即升级</button>
+</div>
+<div class="pt-4 border-t border-outline-variant/20 space-y-1">
+<div class="text-on-surface-variant hover:bg-surface-container-high rounded-lg flex items-center gap-3 px-3 py-2 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-md text-body-md">帮助</span>
+</div>
+<div class="text-on-surface-variant hover:bg-surface-container-high rounded-lg flex items-center gap-3 px-3 py-2 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md text-body-md">退出登录</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area (Editor) -->
+<main class="flex-1 overflow-y-auto bg-surface-container-lowest flex justify-center p-margin-desktop relative">
+<div class="editor-container w-full">
+<!-- Header / Title -->
+<header class="mb-12">
+<div class="flex items-center gap-2 mb-4">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">设计哲学</span>
+<span class="text-outline text-label-sm">2分钟前修改</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight mb-2">AI 设计系统的未来</h1>
+<div class="h-1 w-24 bg-primary rounded-full"></div>
+</header>
+<!-- Floating AI Toolbar -->
+<div class="absolute top-[280px] left-1/2 -translate-x-1/2 z-40">
+<div class="bg-surface/90 glass-panel border border-outline-variant shadow-xl rounded-xl p-1 flex items-center gap-1">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-primary hover:bg-primary/5 transition-colors font-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="auto_fix_high" style="font-variation-settings: 'FILL' 1;">auto_fix_high</span>
+<span>展开</span>
+</button>
+<div class="w-[1px] h-4 bg-outline-variant"></div>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="unfold_less">unfold_less</span>
+<span>缩短</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="summarize">summarize</span>
+<span>总结</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="tune">tune</span>
+<span>语气调节</span>
+</button>
+</div>
+</div>
+<!-- Editor Text -->
+<article class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed space-y-6 max-w-full">
+<p>设计系统正在经历一场根本性的转变。我们正在从静态的可重用组件库转向能够实时适应用户需求的动态、情景感知框架。将大语言模型（LLM）集成到设计工作流中，不仅仅是为了自动化，更是为了增强人类的能力。</p>
+<p class="border-l-2 border-primary/40 pl-6 text-on-surface font-medium italic">“未来的设计师将不再绘制像素；他们将定义约束和意图，AI 则在这些范围内生成体验。”</p>
+<p>在这种新范式下，一致性不再由死板的规则维持，而是通过语义理解来保证。Lumina AI 正代表了这种进化——一个高实用性工具与极简设计相结合的避风港，旨在促进深度专注。主要的挑战依然存在：我们如何在机器效率与人类创造力之间取得平衡？</p>
+<p>我们正在探索 AI 优先设计系统的三大核心支柱：
+                    <span class="block mt-4 pl-4 border-l border-outline-variant">1. 基于设备约束的生成式布局。</span>
+<span class="block mt-2 pl-4 border-l border-outline-variant">2. 针对可读性优化的自适应排版。</span>
+<span class="block mt-2 pl-4 border-l border-outline-variant">3. 用于即时品牌切换的语义令牌映射。</span>
+</p>
+<div class="flex items-center gap-1 text-primary animate-pulse">
+<span class="w-0.5 h-6 bg-primary"></span>
+<span class="font-label-md italic ml-1">AI 正在思考...</span>
+</div>
+</article>
+</div>
+</main>
+<!-- Right Side Panel -->
+<aside class="w-sidebar-width h-full bg-surface-container-low border-l border-outline-variant/30 flex flex-col shrink-0 hidden xl:flex">
+<div class="p-base space-y-gutter overflow-y-auto">
+<div>
+<h3 class="font-label-md text-label-md font-bold text-outline uppercase tracking-wider mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="format_list_bulleted">format_list_bulleted</span>
+                    智能大纲
+                </h3>
+<div class="space-y-3">
+<div class="group cursor-pointer">
+<div class="text-label-md font-medium text-on-surface group-hover:text-primary transition-colors">UI 的演进</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-1 overflow-hidden">
+<div class="bg-primary h-full w-full"></div>
+</div>
+</div>
+<div class="group cursor-pointer">
+<div class="text-label-md font-medium text-on-surface group-hover:text-primary transition-colors">增强创造力</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-1 overflow-hidden">
+<div class="bg-primary h-full w-[60%]"></div>
+</div>
+</div>
+<div class="group cursor-pointer opacity-50">
+<div class="text-label-md font-medium text-on-surface">伦理约束</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-1 overflow-hidden">
+<div class="bg-primary h-full w-[0%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="h-[1px] bg-outline-variant/20"></div>
+<div>
+<h3 class="font-label-md text-label-md font-bold text-outline uppercase tracking-wider mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="library_books">library_books</span>
+                    AI 引用
+                </h3>
+<div class="space-y-4">
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/30 shadow-sm hover:border-primary/40 transition-colors cursor-pointer group">
+<div class="text-[12px] font-bold text-primary mb-1">文章</div>
+<p class="text-label-md font-medium text-on-surface leading-tight mb-2">使用 AI 设计：2024 年 UX 现状</p>
+<div class="flex items-center gap-1 text-[11px] text-outline">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+                            uxdesign.cc
+                        </div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/30 shadow-sm hover:border-primary/40 transition-colors cursor-pointer group">
+<div class="text-[12px] font-bold text-secondary mb-1">白皮书</div>
+<p class="text-label-md font-medium text-on-surface leading-tight mb-2">神经设计系统与交互性</p>
+<div class="flex items-center gap-1 text-[11px] text-outline">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+                            research.lumina.ai
+                        </div>
+</div>
+<div class="relative overflow-hidden rounded-xl border border-outline-variant/30 mt-6 h-32 flex items-center justify-center text-center p-4 group">
+<img class="absolute inset-0 w-full h-full object-cover brightness-[0.4]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjhmnu4q-A9DP3zIEYAglFujhLhh-4WSiUbpP-2b7r2xHPqUlPDTZFKPcO-y3PrQgHQ-CpF80H0SBfLKHrWFBl9e2h0yRGFRZlC_lZgqYazFOIacjgDjf4yrU55MmjP0S8AeMhkTQV0VroyAC_GlXTIabXvsxZGfCJELaee0wUnEgxSekkXxlDSA89WSHaqY7qyJFl2tQWWtcdVC2G841yx9tPMUmCb2GIpBg0ZMmIl-knfEeYmfvbKOmNWosvD6WlJu-tGilhMeE"/>
+<div class="relative z-10">
+<span class="material-symbols-outlined text-white mb-2" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<div class="text-white text-label-sm font-bold">生成概念图</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+<!-- Mobile Bottom Navigation -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-xl border-t border-outline-variant/30 flex justify-around py-3 px-6 z-50">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="edit_note" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+<span class="text-[10px] font-bold">编辑器</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="folder_shared">folder_shared</span>
+<span class="text-[10px] font-medium">资源库</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="text-[10px] font-medium">AI</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[10px] font-medium">设置</span>
+</div>
+</div>
+</body></html>

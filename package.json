@@ -2,8 +2,8 @@
   "name": "ai-study-notes-monorepo",
   "private": true,
   "workspaces": [
-    "apps/web",
-    "packages/contracts"
+    "frontend/web",
+    "integration/contracts"
   ],
   "scripts": {
     "dev:web": "npm --workspace @ai-study-notes/web run dev",
@@ -11,4 +11,3 @@
     "lint:web": "npm --workspace @ai-study-notes/web run lint"
   }
 }
-

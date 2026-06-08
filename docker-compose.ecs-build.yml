@@ -1,3 +1,5 @@
+name: ai-study-notes
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -5,9 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ai_study_notes}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in /opt/ai-study-notes/.env}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -19,8 +19,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: ai-study-redis
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -31,12 +29,9 @@ services:
     image: minio/minio:latest
     container_name: ai-study-minio
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in /opt/ai-study-notes/.env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in /opt/ai-study-notes/.env}
     command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     volumes:
       - minio-data:/data
     healthcheck:
@@ -49,6 +44,7 @@ services:
     build:
       context: ./backend/api
       dockerfile: ../../infrastructure/docker/api.Dockerfile
+    image: ai-study-api:ecs
     container_name: ai-study-api
     env_file:
       - .env
@@ -59,8 +55,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    ports:
-      - "8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
@@ -71,6 +65,7 @@ services:
     build:
       context: ./integration/ai-pipeline
       dockerfile: ../../infrastructure/docker/ai-pipeline.Dockerfile
+    image: ai-study-worker:ecs
     container_name: ai-study-worker
     env_file:
       - .env
@@ -88,17 +83,34 @@ services:
       context: .
       dockerfile: infrastructure/docker/web.Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://ainote.cloud}
         NEXT_PUBLIC_ENABLE_MOCK_FALLBACK: ${NEXT_PUBLIC_ENABLE_MOCK_FALLBACK:-false}
+    image: ai-study-web:ecs
     container_name: ai-study-web
     env_file:
       - .env
     depends_on:
       api:
         condition: service_healthy
+
+  proxy:
+    image: caddy:2-alpine
+    container_name: ai-study-proxy
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
     ports:
-      - "3000:3000"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
 
 volumes:
   postgres-data:
   minio-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,20 @@
+ainote.cloud, www.ainote.cloud {
+  encode gzip
+
+  request_body {
+    max_size 32MB
+  }
+
+  @health path /health
+  handle @health {
+    reverse_proxy api:8000
+  }
+
+  handle /api/* {
+    reverse_proxy api:8000
+  }
+
+  handle {
+    reverse_proxy web:3000
+  }
+}
