@@ -23,4 +23,13 @@ def test_process_document_job_builds_artifacts() -> None:
 
     assert artifacts.document_id == "doc-test"
     assert len(artifacts.knowledge_points) >= 2
+    assert len(artifacts.knowledge_points) <= 8
+    first_point = artifacts.knowledge_points[0]
+    assert first_point.chapter_title
+    assert first_point.details["key_takeaways"]
+    assert first_point.details["review_prompt"]
+    assert first_point.details["confidence"] > 0
+    assert artifacts.mindmap.nodes[0]["level"] == 0
+    assert "summary" in artifacts.mindmap.nodes[0]
+    assert "relation_type" in artifacts.mindmap.edges[0]
     assert len(artifacts.quiz.questions) >= 2

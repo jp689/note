@@ -60,6 +60,7 @@ class DocumentSummary(CamelModel):
     error_message: str | None = None
     job_id: str | None = None
     file_size: int = 0
+    analysis_version: int = 1
 
 
 class UploadDocumentResponse(CamelModel):
@@ -75,6 +76,8 @@ class UploadContentResponse(CamelModel):
 class KnowledgeRelation(CamelModel):
     target_id: str
     label: str
+    reason: str = ""
+    strength: float | None = None
 
 
 class KnowledgeNode(CamelModel):
@@ -87,18 +90,30 @@ class KnowledgeNode(CamelModel):
     difficulty: Difficulty
     embedding: list[float] = Field(default_factory=list)
     relations: list[KnowledgeRelation] = Field(default_factory=list)
+    chapter_title: str | None = None
+    key_takeaways: list[str] = Field(default_factory=list)
+    examples: list[str] = Field(default_factory=list)
+    pitfalls: list[str] = Field(default_factory=list)
+    review_prompt: str = ""
+    confidence: float | None = None
 
 
 class MindMapNode(CamelModel):
     id: str
     label: str
     group: Literal["root", "chapter", "concept", "practice"]
+    knowledge_node_id: str | None = None
+    summary: str = ""
+    source_pages: list[int] = Field(default_factory=list)
+    level: int = 1
 
 
 class MindMapEdge(CamelModel):
     source: str
     target: str
     label: str
+    relation_type: str = "related"
+    strength: float | None = None
 
 
 class MindMapGraph(CamelModel):

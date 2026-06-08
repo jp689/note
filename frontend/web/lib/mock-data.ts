@@ -17,7 +17,8 @@ export const documents: DocumentSummary[] = [
     pageCount: 86,
     uploadedAt: "2026-04-01T08:30:00.000Z",
     progressLabel: "结构化完成，已生成首轮题库",
-    fileSize: 1024
+    fileSize: 1024,
+    analysisVersion: 2
   },
   {
     id: "doc-control-systems",
@@ -27,7 +28,8 @@ export const documents: DocumentSummary[] = [
     pageCount: 42,
     uploadedAt: "2026-03-29T14:10:00.000Z",
     progressLabel: "知识点已拆解，思维导图待确认",
-    fileSize: 1024
+    fileSize: 1024,
+    analysisVersion: 2
   },
   {
     id: "doc-economics",
@@ -37,7 +39,8 @@ export const documents: DocumentSummary[] = [
     pageCount: 33,
     uploadedAt: "2026-03-27T18:20:00.000Z",
     progressLabel: "OCR 回退中，预计 2 分钟后可查看",
-    fileSize: 1024
+    fileSize: 1024,
+    analysisVersion: 2
   }
 ];
 

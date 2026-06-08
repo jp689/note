@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,6 +43,7 @@ class Document(Base):
     status: Mapped[str] = mapped_column(String(32), index=True, default="uploaded")
     progress_label: Mapped[str] = mapped_column(String(512), default="File uploaded and waiting for processing")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    analysis_version: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
@@ -76,8 +78,9 @@ class KnowledgeNode(Base):
     source_pages: Mapped[list[int]] = mapped_column(JSON, default=list)
     difficulty: Mapped[str] = mapped_column(String(32), default="basic")
     embedding: Mapped[list[float]] = mapped_column(JSON, default=list)
-    relations: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)
+    relations: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     chapter_title: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    details: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
@@ -88,8 +91,8 @@ class MindMapGraph(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     document_id: Mapped[str] = mapped_column(ForeignKey("documents.id"), index=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
-    nodes: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)
-    edges: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)
+    nodes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    edges: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 

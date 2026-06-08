@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getDocumentDownloadUrl } from "../lib/api";
 import { LuminaIcon } from "./lumina-icon";
 
@@ -13,8 +13,70 @@ export function PdfPreview({ documentId, documentTitle }: PdfPreviewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   const pdfUrl = getDocumentDownloadUrl(documentId);
+
+  useEffect(() => {
+    let revokedUrl: string | null = null;
+    const controller = new AbortController();
+    setIsLoading(true);
+    setHasError(false);
+    setObjectUrl(null);
+
+    async function loadPdf() {
+      try {
+        const token = localStorage.getItem("ai-study-token");
+        const headers = new Headers();
+        if (token) {
+          headers.set("authorization", `Bearer ${token}`);
+        }
+        const response = await fetch(pdfUrl, {
+          headers,
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error("PDF request failed");
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        revokedUrl = url;
+        setObjectUrl(url);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setHasError(true);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadPdf();
+    return () => {
+      controller.abort();
+      if (revokedUrl) {
+        URL.revokeObjectURL(revokedUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  function handleDownload() {
+    if (!objectUrl) {
+      return;
+    }
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = `${documentTitle}.pdf`;
+    anchor.click();
+  }
+
+  function handleOpenWindow() {
+    if (objectUrl) {
+      window.open(objectUrl, "_blank", "noopener,noreferrer");
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -37,14 +99,24 @@ export function PdfPreview({ documentId, documentTitle }: PdfPreviewProps) {
             <LuminaIcon className="text-[18px]" name={isExpanded ? "fullscreen_exit" : "fullscreen"} />
             {isExpanded ? "收起" : "展开"}
           </button>
-          <a
-            className="flex h-9 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-medium text-on-primary transition hover:bg-primary/90"
-            download={`${documentTitle}.pdf`}
-            href={pdfUrl}
+          <button
+            className="flex h-9 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-medium text-on-primary transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
+            onClick={handleOpenWindow}
+            disabled={!objectUrl}
+            type="button"
+          >
+            <LuminaIcon className="text-[18px]" name="open_in_new" />
+            新窗口
+          </button>
+          <button
+            className="flex h-9 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-medium text-on-primary transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={!objectUrl}
+            onClick={handleDownload}
+            type="button"
           >
             <LuminaIcon className="text-[18px]" name="download" />
             下载
-          </a>
+          </button>
         </div>
       </div>
 
@@ -74,27 +146,25 @@ export function PdfPreview({ documentId, documentTitle }: PdfPreviewProps) {
                   请尝试下载后使用本地 PDF 阅读器查看
                 </p>
               </div>
-              <a
+              <button
                 className="ui-button-primary"
-                download={`${documentTitle}.pdf`}
-                href={pdfUrl}
+                disabled={!objectUrl}
+                onClick={handleDownload}
+                type="button"
               >
                 下载 PDF
-              </a>
+              </button>
             </div>
           </div>
         )}
 
+        {objectUrl ? (
         <iframe
           className="h-full w-full"
-          onError={() => {
-            setIsLoading(false);
-            setHasError(true);
-          }}
-          onLoad={() => setIsLoading(false)}
-          src={`${pdfUrl}#toolbar=0&navpanes=0`}
+          src={`${objectUrl}#toolbar=0&navpanes=0`}
           title={`PDF 预览 - ${documentTitle}`}
         />
+        ) : null}
       </div>
 
       <p className="text-xs text-on-surface-variant">

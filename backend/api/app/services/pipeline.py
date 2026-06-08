@@ -85,10 +85,24 @@ def document_to_summary(document: models.Document, job_id: str | None = None) ->
         error_message=document.error_message,
         job_id=job_id,
         file_size=document.file_size,
+        analysis_version=document.analysis_version,
     )
 
 
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def _optional_float(value: object) -> float | None:
+    if isinstance(value, int | float):
+        return float(value)
+    return None
+
+
 def knowledge_to_schema(node: models.KnowledgeNode) -> KnowledgeNode:
+    details = node.details or {}
     return KnowledgeNode(
         id=node.id,
         document_id=node.document_id,
@@ -99,10 +113,21 @@ def knowledge_to_schema(node: models.KnowledgeNode) -> KnowledgeNode:
         difficulty=node.difficulty,  # type: ignore[arg-type]
         embedding=node.embedding or [],
         relations=[
-            KnowledgeRelation(target_id=item["target_id"], label=item["label"])
+            KnowledgeRelation(
+                target_id=item["target_id"],
+                label=item["label"],
+                reason=str(item.get("reason") or ""),
+                strength=_optional_float(item.get("strength")),
+            )
             for item in (node.relations or [])
             if "target_id" in item and "label" in item
         ],
+        chapter_title=node.chapter_title,
+        key_takeaways=_string_list(details.get("key_takeaways")),
+        examples=_string_list(details.get("examples")),
+        pitfalls=_string_list(details.get("pitfalls")),
+        review_prompt=str(details.get("review_prompt") or ""),
+        confidence=_optional_float(details.get("confidence")),
     )
 
 
@@ -337,9 +362,22 @@ def apply_pipeline_result(
                 difficulty=node.difficulty,
                 embedding=node.embedding or stable_embedding(f"{node.title}\n{node.summary}"),
                 relations=[
-                    {"target_id": relation.target_id, "label": relation.label}
+                    {
+                        "target_id": relation.target_id,
+                        "label": relation.label,
+                        "reason": relation.reason,
+                        "strength": relation.strength,
+                    }
                     for relation in node.relations
                 ],
+                chapter_title=node.chapter_title,
+                details={
+                    "key_takeaways": node.key_takeaways,
+                    "examples": node.examples,
+                    "pitfalls": node.pitfalls,
+                    "review_prompt": node.review_prompt,
+                    "confidence": node.confidence,
+                },
             )
         )
 
@@ -382,6 +420,7 @@ def apply_pipeline_result(
     document.status = "quiz_ready"
     document.error_message = None
     document.page_count = max(document.page_count, payload.page_count, 1)
+    document.analysis_version = 2
     document.progress_label = "知识图谱、思维导图和首轮测评已生成"
     job.status = "completed"
 
@@ -440,8 +479,8 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
     if not raw_chunks:
         raw_chunks = [f"{title_root} 的文档内容。"]
 
-    # Limit to 5 chunks max
-    raw_chunks = raw_chunks[:5]
+    # Limit to 8 chunks max for richer v2 analysis without overloading prompts.
+    raw_chunks = raw_chunks[:8]
 
     chunks = [
         PipelineChunk(
@@ -466,7 +505,8 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
             ai_nodes = deepseek_service.generate_knowledge_nodes(title_root, raw_chunks)
 
             if ai_nodes:
-                for i, node_data in enumerate(ai_nodes[:3]):  # Max 3 knowledge nodes
+                selected_ai_nodes = ai_nodes[:8]
+                for i, node_data in enumerate(selected_ai_nodes):  # Max 8 knowledge nodes
                     node_id = f"{document.id}-kn-{i + 1}"
                     difficulty = node_data.get("difficulty", "basic")
                     if difficulty not in ("basic", "intermediate", "advanced"):
@@ -490,8 +530,21 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
                                 KnowledgeRelation(
                                     target_id=f"{document.id}-kn-{i + 2}",
                                     label="leads_to" if i == 0 else "supports",
+                                    reason="相邻知识点在同一学习路径中连续出现。",
+                                    strength=0.7,
                                 )
-                            ] if i < len(ai_nodes) - 1 else [],
+                            ] if i < len(selected_ai_nodes) - 1 else [],
+                            chapter_title=str(node_data.get("chapter_title") or f"章节 {i // 3 + 1}"),
+                            key_takeaways=[
+                                item for item in node_data.get("key_takeaways", []) if isinstance(item, str)
+                            ][:4],
+                            examples=[item for item in node_data.get("examples", []) if isinstance(item, str)][:3],
+                            pitfalls=[item for item in node_data.get("pitfalls", []) if isinstance(item, str)][:3],
+                            review_prompt=str(
+                                node_data.get("review_prompt")
+                                or f"复述「{node_data.get('title', title_root)}」的核心含义。"
+                            ),
+                            confidence=_optional_float(node_data.get("confidence")) or 0.72,
                         )
                     )
 
@@ -515,6 +568,10 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
                                     id=f"{document.id}-{node['id']}",
                                     label=node["label"],
                                     group=group,
+                                    knowledge_node_id=node.get("knowledge_node_id"),
+                                    summary=str(node.get("summary") or ""),
+                                    source_pages=node.get("source_pages") if isinstance(node.get("source_pages"), list) else [],
+                                    level=int(node.get("level") or 1),
                                 )
                             )
 
@@ -527,6 +584,8 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
                                     source=f"{document.id}-{edge['source']}",
                                     target=f"{document.id}-{edge['target']}",
                                     label=edge.get("label", "related"),
+                                    relation_type=str(edge.get("relation_type") or "related"),
+                                    strength=_optional_float(edge.get("strength")),
                                 )
                             )
 
@@ -602,7 +661,7 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
     if not knowledge_nodes:
         node_titles = ["核心定义", "关键概念", "重要机制", "应用场景", "总结与回顾"]
 
-        for i, chunk in enumerate(chunks[:3]):  # Max 3 knowledge nodes
+        for i, chunk in enumerate(chunks[:8]):  # Max 8 knowledge nodes
             node_id = f"{document.id}-kn-{i + 1}"
             difficulty = "basic" if i == 0 else "intermediate" if i == 1 else "advanced"
             tags = ["definition", "overview"] if i == 0 else ["concept", "analysis"] if i == 1 else ["application", "review"]
@@ -611,7 +670,7 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
                 KnowledgeNode(
                     id=node_id,
                     document_id=document.id,
-                    title=f"{title_root} / {node_titles[i]}",
+                    title=f"{title_root} / {node_titles[i % len(node_titles)]}",
                     summary=chunk.content[:200] + "..." if len(chunk.content) > 200 else chunk.content,
                     tags=tags,
                     source_pages=chunk.source_pages,
@@ -621,25 +680,71 @@ def _build_payload_from_ocr(document: models.Document, ocr_text: str, page_count
                         KnowledgeRelation(
                             target_id=f"{document.id}-kn-{i + 2}",
                             label="leads_to" if i == 0 else "supports",
+                            reason="原文片段顺序相邻，适合连续复习。",
+                            strength=0.66,
                         )
                     ] if i < len(chunks) - 1 else [],
+                    chapter_title=f"章节 {i // 3 + 1}",
+                    key_takeaways=[
+                        chunk.content[:120],
+                        "把这个知识点和前后片段串起来复述。",
+                    ],
+                    examples=[f"用「{title_root}」中的片段 {i + 1} 举一个应用例子。"],
+                    pitfalls=["只记关键词而不理解关系，会影响后续测评。"],
+                    review_prompt=f"闭卷解释「{title_root} / {node_titles[i % len(node_titles)]}」。",
+                    confidence=max(0.58, 0.86 - i * 0.04),
                 )
             )
 
     if not mindmap:
         node_titles = ["核心定义", "关键概念", "重要机制", "应用场景", "总结与回顾"]
         mindmap_nodes = [
-            MindMapNode(id=f"{document.id}-root", label=title_root, group="root"),
+            MindMapNode(id=f"{document.id}-root", label=title_root, group="root", summary="文档学习总览", level=0),
         ]
         mindmap_edges = []
 
-        for i in range(min(3, len(chunks))):
+        for i in range(min(8, len(knowledge_nodes))):
             chapter_id = f"{document.id}-chapter-{i + 1}"
             concept_id = f"{document.id}-concept-{i + 1}"
-            mindmap_nodes.append(MindMapNode(id=chapter_id, label=node_titles[i], group="chapter"))
-            mindmap_nodes.append(MindMapNode(id=concept_id, label=node_titles[i][:4], group="concept"))
-            mindmap_edges.append(MindMapEdge(source=f"{document.id}-root", target=chapter_id, label="chapter"))
-            mindmap_edges.append(MindMapEdge(source=chapter_id, target=concept_id, label="concept"))
+            mindmap_nodes.append(
+                MindMapNode(
+                    id=chapter_id,
+                    label=knowledge_nodes[i].chapter_title or node_titles[i % len(node_titles)],
+                    group="chapter",
+                    summary="按原文顺序聚合的章节",
+                    source_pages=knowledge_nodes[i].source_pages,
+                    level=1,
+                )
+            )
+            mindmap_nodes.append(
+                MindMapNode(
+                    id=concept_id,
+                    label=knowledge_nodes[i].title,
+                    group="concept",
+                    knowledge_node_id=knowledge_nodes[i].id,
+                    summary=knowledge_nodes[i].summary[:160],
+                    source_pages=knowledge_nodes[i].source_pages,
+                    level=2,
+                )
+            )
+            mindmap_edges.append(
+                MindMapEdge(
+                    source=f"{document.id}-root",
+                    target=chapter_id,
+                    label="章节",
+                    relation_type="contains",
+                    strength=0.9,
+                )
+            )
+            mindmap_edges.append(
+                MindMapEdge(
+                    source=chapter_id,
+                    target=concept_id,
+                    label="知识点",
+                    relation_type="contains",
+                    strength=0.82,
+                )
+            )
 
         mindmap = MindMapGraph(
             document_id=document.id,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KnowledgeNetwork, StructuredNotes } from "../../../components/knowledge-workbench";
 import { MindMapPreview } from "../../../components/mindmap-preview";
 import { PdfPreview } from "../../../components/pdf-preview";
 import { SectionCard } from "../../../components/section-card";
@@ -43,11 +44,33 @@ export default async function DocumentDetailPage({
         </div>
       </section>
 
-      <div className="grid gap-8">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <SectionCard title="原始内容" eyebrow="PDF">
           <PdfPreview documentId={params.id} documentTitle={document.title} />
         </SectionCard>
 
+        <SectionCard title="学习洞察" eyebrow="AI">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl bg-surface-container-lowest/80 p-4">
+              <p className="text-xs font-bold text-outline">知识点</p>
+              <p className="mt-2 text-3xl font-semibold text-ink">{knowledge.length}</p>
+            </div>
+            <div className="rounded-2xl bg-surface-container-lowest/80 p-4">
+              <p className="text-xs font-bold text-outline">关系</p>
+              <p className="mt-2 text-3xl font-semibold text-ink">{knowledge.reduce((total, node) => total + node.relations.length, 0)}</p>
+            </div>
+            <div className="rounded-2xl bg-surface-container-lowest/80 p-4">
+              <p className="text-xs font-bold text-outline">分析版本</p>
+              <p className="mt-2 text-3xl font-semibold text-ink">v{document.analysisVersion}</p>
+            </div>
+          </div>
+          <p className="mt-5 text-sm leading-6 text-ink/70">
+            右侧内容会把 PDF 拆成章节、知识点、关系和复习提示。旧文档重处理完成前会先用兼容数据展示。
+          </p>
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-8">
         <SectionCard title="结构化笔记" eyebrow="笔记">
           {knowledge.length === 0 ? (
             <EmptyState
@@ -56,22 +79,7 @@ export default async function DocumentDetailPage({
               title="暂无结构化笔记"
             />
           ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {knowledge.map((node) => (
-              <div className="ui-card" key={node.id}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-ink">{node.title}</h3>
-                  <span className="ui-chip">
-                    {node.difficulty}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-ink/70">{node.summary}</p>
-                <p className="mt-4 text-xs uppercase tracking-[0.25em] text-ink/40">
-                  来源页码: {node.sourcePages.join(" / ")}
-                </p>
-              </div>
-            ))}
-          </div>
+          <StructuredNotes nodes={knowledge} />
           )}
         </SectionCard>
 
@@ -83,30 +91,7 @@ export default async function DocumentDetailPage({
               title="暂无知识点关系"
             />
           ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {knowledge.map((node) => (
-              <div className="ui-card" key={node.id}>
-                <p className="text-sm font-semibold text-ink">{node.title}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {node.tags.map((tag) => (
-                    <span
-                      className="rounded-full bg-mist px-3 py-1 text-xs font-medium text-ink/70"
-                      key={tag}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-4 space-y-2 text-sm text-ink/70">
-                  {node.relations.map((relation) => (
-                    <p key={`${node.id}-${relation.targetId}`}>
-                      关系: {relation.label} {"->"} {relation.targetId}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <KnowledgeNetwork nodes={knowledge} />
           )}
         </SectionCard>
 

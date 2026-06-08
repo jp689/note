@@ -39,11 +39,14 @@ export interface DocumentSummary {
   errorMessage?: string | null;
   jobId?: string | null;
   fileSize: number;
+  analysisVersion: number;
 }
 
 export interface KnowledgeRelation {
   targetId: string;
   label: string;
+  reason?: string;
+  strength?: number | null;
 }
 
 export interface KnowledgeNode {
@@ -56,18 +59,30 @@ export interface KnowledgeNode {
   difficulty: Difficulty;
   embedding?: number[];
   relations: KnowledgeRelation[];
+  chapterTitle?: string | null;
+  keyTakeaways?: string[];
+  examples?: string[];
+  pitfalls?: string[];
+  reviewPrompt?: string;
+  confidence?: number | null;
 }
 
 export interface MindMapNode {
   id: string;
   label: string;
   group: "root" | "chapter" | "concept" | "practice";
+  knowledgeNodeId?: string | null;
+  summary?: string;
+  sourcePages?: number[];
+  level?: number;
 }
 
 export interface MindMapEdge {
   source: string;
   target: string;
   label: string;
+  relationType?: string;
+  strength?: number | null;
 }
 
 export interface MindMapGraph {

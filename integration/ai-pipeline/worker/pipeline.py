@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from hashlib import sha256
 from io import BytesIO
+from typing import Any
 
 from pypdf import PdfReader
 
@@ -55,31 +56,101 @@ def chunk_text(text: str) -> list[str]:
 
 
 def structure_knowledge(job: DocumentJob, chunks: list[str]) -> list[KnowledgePoint]:
+    source_chunks = chunks[:8]
     points = [
         KnowledgePoint(
             id=f"{job.document_id}-kp-{index + 1}",
             document_id=job.document_id,
-            title=f"{job.title} / Module {index + 1}",
+            title=f"{job.title} / 知识点 {index + 1}",
             summary=chunk,
             source_pages=[index + 1, index + 2],
-            tags=["auto-extracted", "pdf", "knowledge"],
+            tags=["auto-extracted", "pdf", f"section-{index + 1}"],
             difficulty="basic" if index == 0 else "intermediate" if index == 1 else "advanced",
             embedding=stable_embedding(f"{job.title}\n{chunk}"),
+            chapter_title=f"章节 {index // 3 + 1}",
+            details={
+                "key_takeaways": [
+                    chunk[:80],
+                    "把概念、步骤和适用场景放在同一张学习卡片中复述。",
+                ],
+                "examples": [f"结合「{job.title}」第 {index + 1} 个片段举一个应用例子。"],
+                "pitfalls": ["不要只背关键词，要能解释它和前后知识点的关系。"],
+                "review_prompt": f"闭卷说明「{job.title} / 知识点 {index + 1}」的核心含义。",
+                "confidence": max(0.58, 0.9 - index * 0.05),
+            },
         )
-        for index, chunk in enumerate(chunks[:3])
+        for index, chunk in enumerate(source_chunks)
     ]
     for index, point in enumerate(points[:-1]):
-        point.relations = [{"target_id": points[index + 1].id, "label": "leads_to"}]
+        point.relations = [
+            {
+                "target_id": points[index + 1].id,
+                "label": "leads_to",
+                "reason": "相邻片段在原文中连续出现，适合按学习路径串联。",
+                "strength": 0.68,
+            }
+        ]
     return points
 
 
 def build_mindmap(job: DocumentJob, points: list[KnowledgePoint]) -> MindMapPayload:
-    nodes = [{"id": f"{job.document_id}-root", "label": job.title, "group": "root"}]
-    edges: list[dict[str, str]] = []
+    nodes = [
+        {
+            "id": f"{job.document_id}-root",
+            "label": job.title,
+            "group": "root",
+            "summary": "文档学习总览",
+            "source_pages": [],
+            "level": 0,
+        }
+    ]
+    edges: list[dict[str, Any]] = []
+    chapter_ids: dict[str, str] = {}
     for index, point in enumerate(points, start=1):
+        chapter_id = chapter_ids.get(point.chapter_title)
+        if chapter_id is None:
+            chapter_id = f"{job.document_id}-chapter-{len(chapter_ids) + 1}"
+            chapter_ids[point.chapter_title] = chapter_id
+            nodes.append(
+                {
+                    "id": chapter_id,
+                    "label": point.chapter_title,
+                    "group": "chapter",
+                    "summary": "按原文顺序聚合的知识章节",
+                    "source_pages": point.source_pages,
+                    "level": 1,
+                }
+            )
+            edges.append(
+                {
+                    "source": f"{job.document_id}-root",
+                    "target": chapter_id,
+                    "label": "章节",
+                    "relation_type": "contains",
+                    "strength": 0.9,
+                }
+            )
         node_id = f"{job.document_id}-node-{index}"
-        nodes.append({"id": node_id, "label": point.title, "group": "concept"})
-        edges.append({"source": f"{job.document_id}-root", "target": node_id, "label": "contains"})
+        nodes.append(
+            {
+                "id": node_id,
+                "label": point.title,
+                "group": "concept",
+                "knowledge_node_id": point.id,
+                "summary": point.summary[:160],
+                "source_pages": point.source_pages,
+                "level": 2,
+            }
+        )
+        edges.append(
+            {
+                "source": chapter_id,
+                "target": node_id,
+                "label": "知识点",
+                "relation_type": "contains",
+                "strength": 0.84,
+            }
+        )
     return MindMapPayload(nodes=nodes, edges=edges)
 
 

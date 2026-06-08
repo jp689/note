@@ -312,6 +312,7 @@ def download_document(
         path=str(local_path),
         media_type="application/pdf",
         filename=document.file_name,
+        content_disposition_type="inline",
     )
 
 

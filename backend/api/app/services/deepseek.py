@@ -106,7 +106,13 @@ class DeepSeekService:
     "title": "知识点标题",
     "summary": "知识点摘要（100-200字）",
     "tags": ["标签1", "标签2"],
-    "difficulty": "basic/intermediate/advanced"
+    "difficulty": "basic/intermediate/advanced",
+    "chapter_title": "所属章节",
+    "key_takeaways": ["核心要点1", "核心要点2"],
+    "examples": ["应用例子"],
+    "pitfalls": ["常见误区"],
+    "review_prompt": "复习提示问题",
+    "confidence": 0.85
   }}
 ]
 
@@ -115,7 +121,9 @@ class DeepSeekService:
 2. 每个知识点应该有清晰的定义和解释
 3. 标签应该反映知识点的属性和关联
 4. 难度等级根据理解难度划分
-5. 只返回JSON数组，不要有其他文字"""
+5. chapter_title、key_takeaways、examples、pitfalls、review_prompt 必须面向学生复习
+6. confidence 使用 0 到 1 的小数
+7. 只返回JSON数组，不要有其他文字"""
 
         messages = [
             {"role": "system", "content": "你是一个专业的知识提取和结构化专家，擅长从文档中提取关键知识点并组织成结构化的知识图谱。"},
@@ -165,11 +173,11 @@ class DeepSeekService:
   "nodes": [
     {{"id": "root", "label": "{document_title}", "group": "root"}},
     {{"id": "chapter-1", "label": "章节标题", "group": "chapter"}},
-    {{"id": "concept-1", "label": "概念标题", "group": "concept"}}
+    {{"id": "concept-1", "label": "概念标题", "group": "concept", "summary": "一句话摘要", "source_pages": [1], "level": 2, "knowledge_node_id": "knowledge-id"}}
   ],
   "edges": [
-    {{"source": "root", "target": "chapter-1", "label": "chapter"}},
-    {{"source": "chapter-1", "target": "concept-1", "label": "concept"}}
+    {{"source": "root", "target": "chapter-1", "label": "章节", "relation_type": "contains", "strength": 0.9}},
+    {{"source": "chapter-1", "target": "concept-1", "label": "知识点", "relation_type": "contains", "strength": 0.8}}
   ]
 }}
 

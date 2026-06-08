@@ -67,6 +67,12 @@ def artifact_payload(job: DocumentJob, pdf_bytes: bytes | None) -> dict[str, Any
                 "difficulty": point.difficulty,
                 "embedding": point.embedding,
                 "relations": point.relations,
+                "chapter_title": point.chapter_title,
+                "key_takeaways": point.details.get("key_takeaways", []),
+                "examples": point.details.get("examples", []),
+                "pitfalls": point.details.get("pitfalls", []),
+                "review_prompt": point.details.get("review_prompt", ""),
+                "confidence": point.details.get("confidence"),
             }
             for point in artifacts.knowledge_points
         ],

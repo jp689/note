@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { LuminaIcon } from "./lumina-icon";
 import { LogoutLink } from "./logout-link";
 import { NotificationPanel } from "./notification-panel";
 import { SearchPanel } from "./search-panel";
 import { UserAvatar } from "./user-avatar";
-import { useToast } from "./toast-provider";
 
 const navigation = [
   { href: "/", label: "学习控制台", shortLabel: "首页", icon: "dashboard" },
@@ -51,7 +50,11 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
 
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const toast = useToast();
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setHasToken(Boolean(localStorage.getItem("ai-study-token")));
+  }, []);
 
   // Login and admin pages have their own layouts
   const isFullscreenPage = pathname === "/login" || pathname.startsWith("/admin");
@@ -61,16 +64,17 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background text-on-surface">
-      <aside className="glass-panel fixed left-0 top-0 z-50 hidden h-screen w-sidebar flex-col border-r border-outline-variant/40 p-5 lg:flex">
-        <div className="px-1 py-4">
+      <aside className="glass-panel fixed left-0 top-0 z-50 hidden h-screen w-sidebar grid-rows-[auto_minmax(0,1fr)_auto] border-r border-outline-variant/40 p-5 lg:grid">
+        <div className="px-1 pb-5 pt-4">
           <BrandMark />
         </div>
 
-        <nav className="mt-8 flex flex-1 flex-col gap-2">
-          {navigation.map((item) => {
-            const active = isActivePath(pathname, item.href);
-            return (
-            <Link
+        <nav className="min-h-0 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-2">
+            {navigation.map((item) => {
+              const active = isActivePath(pathname, item.href);
+              return (
+                <Link
                 className={`flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-base transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   active
                     ? "bg-primary text-on-primary shadow-lift"
@@ -81,9 +85,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
               >
                 <LuminaIcon filled={active} name={item.icon} />
                 <span className="font-semibold">{item.label}</span>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
           <div className="mt-7 border-t border-outline-variant/30 pt-6">
             <p className="px-4 text-xs font-bold uppercase tracking-[0.16em] text-outline">
               智能文件夹
@@ -108,17 +113,19 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </nav>
 
-        <div className="grid gap-4 border-t border-outline-variant/25 pt-5">
-          <div className="rounded-2xl bg-primary-container p-4 text-on-primary">
-            <p className="font-bold">MVP 学习闭环</p>
-            <p className="mt-1 text-sm leading-5 text-on-primary/85">PDF、知识库、测评和复习队列已接入。</p>
-            <Link
-              className="ui-button-primary mt-4 w-full bg-surface text-primary hover:bg-surface-container-low text-center block"
-              href="/"
-            >
-              查看状态
-            </Link>
-          </div>
+        <div className="grid gap-3 border-t border-outline-variant/25 pt-5">
+          {hasToken === false ? (
+            <div className="rounded-2xl bg-primary-container p-4 text-on-primary">
+              <p className="font-bold">MVP 学习闭环</p>
+              <p className="mt-1 text-sm leading-5 text-on-primary/85">PDF、知识库、测评和复习队列已接入。</p>
+              <Link
+                className="ui-button-primary mt-4 block w-full bg-surface text-center text-primary hover:bg-surface-container-low"
+                href="/"
+              >
+                查看状态
+              </Link>
+            </div>
+          ) : null}
           <div className="grid gap-1">
             <Link
               className="flex min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 text-on-surface-variant transition hover:bg-surface-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"

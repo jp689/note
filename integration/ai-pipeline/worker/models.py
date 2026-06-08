@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -23,12 +23,14 @@ class KnowledgePoint(BaseModel):
     tags: list[str] = Field(default_factory=list)
     difficulty: Literal["basic", "intermediate", "advanced"] = "basic"
     embedding: list[float] = Field(default_factory=list)
-    relations: list[dict[str, str]] = Field(default_factory=list)
+    relations: list[dict[str, Any]] = Field(default_factory=list)
+    chapter_title: str = ""
+    details: dict[str, object] = Field(default_factory=dict)
 
 
 class MindMapPayload(BaseModel):
-    nodes: list[dict[str, str]]
-    edges: list[dict[str, str]]
+    nodes: list[dict[str, Any]]
+    edges: list[dict[str, Any]]
 
 
 class QuizPayload(BaseModel):
