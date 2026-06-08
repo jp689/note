@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { LuminaIcon } from "./lumina-icon";
 
 type ToastType = "info" | "success" | "warning";
@@ -28,6 +28,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
   }, []);
+  const value = useMemo(() => ({ showToast }), [showToast]);
 
   useEffect(() => {
     if (toasts.length === 0) return;
@@ -50,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <div className="fixed bottom-20 left-1/2 z-[100] flex -translate-x-1/2 flex-col gap-2 lg:bottom-6">
         {toasts.map((toast) => (

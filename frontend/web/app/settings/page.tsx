@@ -11,7 +11,7 @@ import {
 } from "../../lib/api";
 
 export default function SettingsPage() {
-  const toast = useToast();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -35,17 +35,17 @@ export default function SettingsPage() {
         setOriginalFullName(profile.fullName);
         setOriginalEmail(profile.email);
       })
-      .catch(() => toast.showToast("加载用户信息失败", "warning"))
+      .catch(() => showToast("加载用户信息失败", "warning"))
       .finally(() => setLoading(false));
-  }, [toast]);
+  }, [showToast]);
 
   async function handleSaveProfile() {
     if (!fullName.trim()) {
-      toast.showToast("姓名不能为空", "warning");
+      showToast("姓名不能为空", "warning");
       return;
     }
     if (!email.trim()) {
-      toast.showToast("邮箱不能为空", "warning");
+      showToast("邮箱不能为空", "warning");
       return;
     }
 
@@ -57,9 +57,9 @@ export default function SettingsPage() {
       });
       setOriginalFullName(fullName);
       setOriginalEmail(email);
-      toast.showToast("个人资料已更新", "success");
+      showToast("个人资料已更新", "success");
     } catch (err) {
-      toast.showToast(err instanceof Error ? err.message : "更新失败", "warning");
+      showToast(err instanceof Error ? err.message : "更新失败", "warning");
     } finally {
       setSaving(false);
     }
@@ -67,15 +67,15 @@ export default function SettingsPage() {
 
   async function handleChangePassword() {
     if (!currentPassword) {
-      toast.showToast("请输入当前密码", "warning");
+      showToast("请输入当前密码", "warning");
       return;
     }
     if (newPassword.length < 6) {
-      toast.showToast("新密码至少需要 6 个字符", "warning");
+      showToast("新密码至少需要 6 个字符", "warning");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.showToast("两次输入的新密码不一致", "warning");
+      showToast("两次输入的新密码不一致", "warning");
       return;
     }
 
@@ -85,9 +85,9 @@ export default function SettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast.showToast("密码修改成功", "success");
+      showToast("密码修改成功", "success");
     } catch (err) {
-      toast.showToast(err instanceof Error ? err.message : "密码修改失败", "warning");
+      showToast(err instanceof Error ? err.message : "密码修改失败", "warning");
     } finally {
       setChangingPassword(false);
     }

@@ -28,20 +28,15 @@ import {
   reviewQueue,
   searchResults
 } from "./mock-data";
+import { buildApiUrl as resolveApiUrl } from "./api-url";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL ?? API_BASE_URL;
 const ENABLE_MOCK_FALLBACK =
   process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_ENABLE_MOCK_FALLBACK === "true";
+const ENABLE_READ_FALLBACK = process.env.NEXT_PUBLIC_ENABLE_API_READ_FALLBACK !== "false";
 const TOKEN_KEY = "ai-study-token";
 
 export function buildApiUrl(path: string): string {
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-
-  const baseUrl = typeof window === "undefined" ? INTERNAL_API_BASE_URL : API_BASE_URL;
-  return `${baseUrl}${path}`;
+  return resolveApiUrl(path);
 }
 
 function getBrowserToken(): string | undefined {
@@ -67,7 +62,7 @@ async function getJson<T>(path: string, fallback: T, token?: string): Promise<T>
     }
     return (await response.json()) as T;
   } catch (error) {
-    if (ENABLE_MOCK_FALLBACK) {
+    if (ENABLE_MOCK_FALLBACK || ENABLE_READ_FALLBACK) {
       return fallback;
     }
     throw error;
