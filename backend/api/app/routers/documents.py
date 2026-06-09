@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from pathlib import PurePath
+from urllib.parse import quote
 from uuid import uuid4
 
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -73,6 +74,11 @@ def _safe_pdf_filename(filename: str) -> str:
             detail="Only PDF uploads are supported",
         )
     return clean_name
+
+
+def _inline_pdf_disposition(filename: str) -> str:
+    fallback = filename.encode("ascii", "ignore").decode("ascii").replace('"', "").strip() or "document.pdf"
+    return f"inline; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename)}"
 
 
 async def _read_limited_body(request: Request) -> bytes:
@@ -305,14 +311,23 @@ def download_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     local_path = storage.get_local_file_path(document.file_key)
-    if not local_path.exists():
+    if local_path.exists():
+        return FileResponse(
+            path=str(local_path),
+            media_type="application/pdf",
+            filename=document.file_name,
+            content_disposition_type="inline",
+        )
+
+    try:
+        content = storage.get_bytes(document.file_key)
+    except FileNotFoundError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PDF file not found on server")
 
-    return FileResponse(
-        path=str(local_path),
+    return Response(
+        content=content,
         media_type="application/pdf",
-        filename=document.file_name,
-        content_disposition_type="inline",
+        headers={"content-disposition": _inline_pdf_disposition(document.file_name)},
     )
 
 

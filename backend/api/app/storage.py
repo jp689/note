@@ -60,6 +60,25 @@ class ObjectStorage:
         # Fallback: return a local file URL path for development
         return f"/api/documents/content/{key}"
 
+    def get_bytes(self, key: str) -> bytes:
+        """Read an object from S3-compatible storage, with local fallback for development."""
+        try:
+            self._ensure_bucket()
+            response = self._client.get_object(Bucket=settings.s3_bucket, Key=key)
+            return response["Body"].read()
+        except ClientError as error:
+            error_code = error.response.get("Error", {}).get("Code")
+            if settings.env == "production" and error_code not in {"NoSuchKey", "NoSuchBucket", "404"}:
+                raise
+        except BotoCoreError:
+            if settings.env == "production":
+                raise
+
+        local_path = self.get_local_file_path(key)
+        if local_path.exists():
+            return local_path.read_bytes()
+        raise FileNotFoundError(key)
+
     def get_local_file_path(self, key: str) -> Path:
         """Get the local file path for a given storage key."""
         local_root = self._local_root.resolve()

@@ -126,3 +126,32 @@ def test_upload_process_and_submit_document_quiz() -> None:
     )
     assert complete_response.status_code == 200
     assert complete_response.json()["knowledgeNodeId"] == queue[0]["knowledgeNodeId"]
+
+
+def test_download_document_streams_object_storage_when_local_file_is_missing(monkeypatch, tmp_path) -> None:
+    from app.routers import documents as documents_router
+
+    headers = auth_headers()
+    upload_response = client.post(
+        "/api/documents/upload",
+        headers=headers,
+        json={"filename": "remote-only.pdf", "contentType": "application/pdf", "sizeBytes": 28},
+    )
+    document_id = upload_response.json()["document"]["id"]
+    pdf_content = b"%PDF-1.7\nremote object storage"
+
+    class FakeStorage:
+        def get_local_file_path(self, key: str):
+            return tmp_path / "missing.pdf"
+
+        def get_bytes(self, key: str) -> bytes:
+            return pdf_content
+
+    monkeypatch.setattr(documents_router, "storage", FakeStorage())
+
+    response = client.get(f"/api/documents/{document_id}/download", headers=headers)
+
+    assert response.status_code == 200
+    assert response.content == pdf_content
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.headers["content-disposition"].startswith("inline")
