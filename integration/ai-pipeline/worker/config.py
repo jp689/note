@@ -38,6 +38,22 @@ class WorkerSettings(BaseSettings):
     local_storage_dir: str = Field(".local/storage", validation_alias=AliasChoices("LOCAL_STORAGE_DIR", "API_LOCAL_STORAGE_DIR"))
     openai_base_url: str = Field("https://api.openai.com/v1", validation_alias=AliasChoices("OPENAI_BASE_URL", "API_OPENAI_BASE_URL"))
     openai_api_key: str = Field("", validation_alias=AliasChoices("OPENAI_API_KEY", "API_OPENAI_API_KEY"))
+    deepseek_base_url: str = Field(
+        "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        validation_alias=AliasChoices("DEEPSEEK_BASE_URL", "API_DEEPSEEK_BASE_URL", "AI_BASE_URL"),
+    )
+    deepseek_api_key: str = Field(
+        "",
+        validation_alias=AliasChoices("DEEPSEEK_API_KEY", "API_DEEPSEEK_API_KEY", "AI_API_KEY"),
+    )
+    deepseek_model: str = Field(
+        "deepseek-v3",
+        validation_alias=AliasChoices("DEEPSEEK_MODEL", "API_DEEPSEEK_MODEL", "AI_MODEL_ID"),
+    )
+    paddleocr_token: str = Field(
+        "",
+        validation_alias=AliasChoices("PADDLEOCR_TOKEN", "API_PADDLEOCR_TOKEN", "OCR_ACCESS_TOKEN"),
+    )
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> "WorkerSettings":

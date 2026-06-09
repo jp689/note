@@ -208,3 +208,65 @@ def test_enqueue_outdated_documents_ignores_completed_process_jobs(monkeypatch) 
 
         assert enqueue_outdated_documents(db, enqueue=enqueue) == 1
         assert queued_payloads[0]["document_id"] == "doc-completed-old-job"
+
+
+def test_enqueue_outdated_documents_requeues_v2_analysis_for_v3(monkeypatch) -> None:
+    from app import models
+    from app.database import Base
+    from app.reprocess import enqueue_outdated_documents
+    from sqlalchemy import create_engine, desc, select
+    from sqlalchemy.orm import Session
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    queued_payloads: list[dict[str, object]] = []
+
+    def enqueue(payload: dict[str, object]) -> bool:
+        queued_payloads.append(payload)
+        return True
+
+    with Session(engine) as db:
+        user = models.User(
+            id="user-1",
+            email="demo@example.com",
+            full_name="Demo",
+            password_hash="hash",
+        )
+        db.add(user)
+        db.add(
+            models.Document(
+                id="doc-v2",
+                user_id=user.id,
+                title="v2.pdf",
+                file_key="documents/user-1/doc-v2/source.pdf",
+                file_name="v2.pdf",
+                file_size=100,
+                mime_type="application/pdf",
+                page_count=1,
+                status="quiz_ready",
+                progress_label="Ready",
+                analysis_version=2,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        )
+        db.add(
+            models.TaskJob(
+                id="job-v2-completed",
+                document_id="doc-v2",
+                user_id=user.id,
+                type="reprocess_document_v2",
+                status="completed",
+                payload={},
+            )
+        )
+        db.commit()
+
+        assert enqueue_outdated_documents(db, enqueue=enqueue) == 1
+        job = db.scalar(
+            select(models.TaskJob)
+            .where(models.TaskJob.document_id == "doc-v2")
+            .order_by(desc(models.TaskJob.created_at))
+        )
+        assert queued_payloads[0]["document_id"] == "doc-v2"
+        assert job.type == "reprocess_document_v3"

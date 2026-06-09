@@ -33,3 +33,33 @@ def test_process_document_job_builds_artifacts() -> None:
     assert "summary" in artifacts.mindmap.nodes[0]
     assert "relation_type" in artifacts.mindmap.edges[0]
     assert len(artifacts.quiz.questions) >= 2
+
+
+def test_process_document_job_generates_content_based_chinese_quiz() -> None:
+    job = DocumentJob(
+        document_id="doc-marx",
+        title="《马克思主义原理》知识点整理.pdf",
+        storage_key="documents/doc-marx/source.pdf",
+    )
+
+    text = (
+        "马克思主义哲学强调实践是认识的基础。\n"
+        "生产力和生产关系的矛盾运动推动社会形态发展。\n"
+        "剩余价值理论揭示资本主义生产方式中的价值增殖机制。\n"
+        "人民群众是历史创造者，需要结合具体历史条件理解社会变迁。"
+    )
+
+    artifacts = process_document_job(job, text.encode("utf-8"))
+
+    stems = " ".join(str(question["stem"]) for question in artifacts.quiz.questions)
+    options = " ".join(
+        " ".join(question.get("options", []))
+        for question in artifacts.quiz.questions
+        if isinstance(question.get("options"), list)
+    )
+
+    assert "Answer this question" not in stems
+    assert "Module" not in stems
+    assert "Unrelated knowledge" not in options
+    assert "马克思主义" in stems
+    assert any("实践" in point.summary or "实践" in point.title for point in artifacts.knowledge_points)

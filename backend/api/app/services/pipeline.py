@@ -420,7 +420,7 @@ def apply_pipeline_result(
     document.status = "quiz_ready"
     document.error_message = None
     document.page_count = max(document.page_count, payload.page_count, 1)
-    document.analysis_version = 2
+    document.analysis_version = 3
     document.progress_label = "知识图谱、思维导图和首轮测评已生成"
     job.status = "completed"
 

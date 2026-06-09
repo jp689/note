@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .models import Document, TaskJob
 from .queueing import enqueue_document_job
 
-TARGET_ANALYSIS_VERSION = 2
+TARGET_ANALYSIS_VERSION = 3
 REPROCESSABLE_STATUSES = ("uploaded", "parsing", "structured", "quiz_ready", "failed")
 
 
@@ -46,7 +46,7 @@ def enqueue_outdated_documents(
                         & TaskJob.status.in_(("queued", "processing"))
                     ),
                     (
-                        (TaskJob.type == "reprocess_document_v2")
+                        (TaskJob.type == "reprocess_document_v3")
                         & TaskJob.status.in_(("queued", "processing", "completed"))
                     ),
                 ),
@@ -58,7 +58,7 @@ def enqueue_outdated_documents(
             id=f"job-{uuid4().hex[:12]}",
             document_id=document.id,
             user_id=document.user_id,
-            type="reprocess_document_v2",
+            type="reprocess_document_v3",
             status="queued",
             payload={},
         )
