@@ -56,3 +56,33 @@ test("builds incoming and outgoing relation summaries for selected knowledge nod
   assert.equal(summary.incoming[0].sourceTitle, "A");
   assert.equal(summary.outgoing[0].targetTitle, "C");
 });
+
+test("builds a non-empty learning insight from knowledge details", () => {
+  const { buildLearningInsight } = loadModule("document-insights.ts");
+
+  const insight = buildLearningInsight([
+    {
+      id: "a",
+      title: "实践与认识",
+      summary: "实践是认识的基础，也是检验认识真理性的标准。",
+      keyTakeaways: ["实践决定认识", "认识反作用于实践"],
+      pitfalls: ["不要把认识看成脱离实践的纯观念"],
+      reviewPrompt: "说明实践和认识的关系。",
+      relations: [{ targetId: "b", label: "leads_to", reason: "实践观点支撑社会历史分析", strength: 0.8 }]
+    },
+    {
+      id: "b",
+      title: "社会历史发展",
+      summary: "生产力与生产关系的矛盾运动推动社会发展。",
+      keyTakeaways: ["矛盾运动推动发展"],
+      examples: ["分析社会形态更替"],
+      relations: []
+    }
+  ]);
+
+  assert.equal(insight.focusTitle, "实践与认识");
+  assert.match(insight.overview, /实践/);
+  assert.deepEqual(insight.takeaways.slice(0, 2), ["实践决定认识", "认识反作用于实践"]);
+  assert.equal(insight.pitfalls[0], "不要把认识看成脱离实践的纯观念");
+  assert.match(insight.relationHighlights[0], /实践观点支撑社会历史分析/);
+});

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { KnowledgeNetwork, StructuredNotes } from "../../../components/knowledge-workbench";
+import { LearningInsightPanel } from "../../../components/learning-insight-panel";
 import { MindMapPreview } from "../../../components/mindmap-preview";
 import { PdfPreview } from "../../../components/pdf-preview";
 import { SectionCard } from "../../../components/section-card";
@@ -50,23 +51,7 @@ export default async function DocumentDetailPage({
         </SectionCard>
 
         <SectionCard title="学习洞察" eyebrow="AI">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl bg-surface-container-lowest/80 p-4">
-              <p className="text-xs font-bold text-outline">知识点</p>
-              <p className="mt-2 text-3xl font-semibold text-ink">{knowledge.length}</p>
-            </div>
-            <div className="rounded-2xl bg-surface-container-lowest/80 p-4">
-              <p className="text-xs font-bold text-outline">关系</p>
-              <p className="mt-2 text-3xl font-semibold text-ink">{knowledge.reduce((total, node) => total + node.relations.length, 0)}</p>
-            </div>
-            <div className="rounded-2xl bg-surface-container-lowest/80 p-4">
-              <p className="text-xs font-bold text-outline">分析版本</p>
-              <p className="mt-2 text-3xl font-semibold text-ink">v{document.analysisVersion}</p>
-            </div>
-          </div>
-          <p className="mt-5 text-sm leading-6 text-ink/70">
-            右侧内容会把 PDF 拆成章节、知识点、关系和复习提示。旧文档重处理完成前会先用兼容数据展示。
-          </p>
+          <LearningInsightPanel analysisVersion={document.analysisVersion} nodes={knowledge} />
         </SectionCard>
       </div>
 

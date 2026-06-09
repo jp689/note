@@ -14,6 +14,16 @@ export interface RelationSummaryItem {
   relation: KnowledgeRelation;
 }
 
+export interface LearningInsight {
+  focusTitle: string;
+  overview: string;
+  takeaways: string[];
+  examples: string[];
+  pitfalls: string[];
+  reviewPrompts: string[];
+  relationHighlights: string[];
+}
+
 export function groupKnowledgeByChapter(nodes: KnowledgeNode[]): KnowledgeChapterGroup[] {
   const groups = new Map<string, KnowledgeChapterGroup>();
   for (const node of nodes) {
@@ -61,4 +71,55 @@ export function buildRelationSummary(selectedNodeId: string, nodes: KnowledgeNod
   }
 
   return { incoming, outgoing };
+}
+
+function uniqueStrings(items: Array<string | undefined | null>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of items) {
+    const value = item?.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
+export function buildLearningInsight(nodes: KnowledgeNode[]): LearningInsight {
+  const ranked = [...nodes].sort((left, right) => {
+    const leftScore = (left.relations?.length ?? 0) + (left.keyTakeaways?.length ?? 0);
+    const rightScore = (right.relations?.length ?? 0) + (right.keyTakeaways?.length ?? 0);
+    return rightScore - leftScore;
+  });
+  const focus = ranked[0];
+  const focusTitle = focus?.title ?? "等待生成";
+  const overview = focus
+    ? `本轮分析以「${focus.title}」为主线：${focus.summary}`
+    : "文档还没有可展示的知识点，后台处理完成后会在这里生成学习主线、复习要点和易错提醒。";
+
+  const takeaways = uniqueStrings(nodes.flatMap((node) => node.keyTakeaways ?? [])).slice(0, 5);
+  const examples = uniqueStrings(nodes.flatMap((node) => node.examples ?? [])).slice(0, 3);
+  const pitfalls = uniqueStrings(nodes.flatMap((node) => node.pitfalls ?? [])).slice(0, 4);
+  const reviewPrompts = uniqueStrings(nodes.map((node) => node.reviewPrompt)).slice(0, 4);
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const relationHighlights = uniqueStrings(
+    nodes.flatMap((node) =>
+      (node.relations ?? []).map((relation) => {
+        const target = byId.get(relation.targetId);
+        const targetTitle = target?.title ?? relation.targetId;
+        const reason = relation.reason || relation.label;
+        return `${node.title} -> ${targetTitle}: ${reason}`;
+      })
+    )
+  ).slice(0, 4);
+
+  return {
+    focusTitle,
+    overview,
+    takeaways: takeaways.length ? takeaways : nodes.slice(0, 3).map((node) => node.summary),
+    examples,
+    pitfalls,
+    reviewPrompts,
+    relationHighlights
+  };
 }
