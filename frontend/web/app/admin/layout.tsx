@@ -8,6 +8,11 @@ import { LuminaIcon } from "../../components/lumina-icon";
 const adminNav = [
   { href: "/admin", label: "控制面板", icon: "dashboard" },
   { href: "/admin/users", label: "用户管理", icon: "people" },
+  { href: "/admin/notes", label: "笔记管理", icon: "article" },
+  { href: "/admin/files", label: "文件管理", icon: "folder_shared" },
+  { href: "/admin/ai", label: "AI 管理", icon: "auto_awesome" },
+  { href: "/admin/settings", label: "系统设置", icon: "settings" },
+  { href: "/admin/logs", label: "日志管理", icon: "fact_check" },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -120,6 +125,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             {pathname === "/admin" && "控制面板"}
             {pathname === "/admin/users" && "用户管理"}
             {pathname.startsWith("/admin/users/") && "用户详情"}
+            {pathname === "/admin/notes" && "笔记管理"}
+            {pathname === "/admin/files" && "文件管理"}
+            {pathname === "/admin/ai" && "AI 管理"}
+            {pathname === "/admin/settings" && "系统设置"}
+            {pathname === "/admin/logs" && "日志管理"}
           </h2>
           <div className="flex items-center gap-3">
             <span className="text-sm text-on-surface-variant">欢迎回来，{userName}</span>

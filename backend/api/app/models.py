@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -188,4 +188,55 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text)
     is_read: Mapped[bool] = mapped_column(default=False)
     link: Mapped[str | None] = mapped_column(String(768), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class SystemSetting(Base):
+    __tablename__ = "system_settings"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    updated_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+
+class AiUsageRecord(Base):
+    __tablename__ = "ai_usage_records"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    document_id: Mapped[str | None] = mapped_column(ForeignKey("documents.id"), nullable=True, index=True)
+    provider: Mapped[str] = mapped_column(String(64), default="deepseek")
+    model: Mapped[str] = mapped_column(String(128), default="")
+    operation: Mapped[str] = mapped_column(String(128))
+    prompt_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    completion_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(32), default="success")
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class LoginLog(Base):
+    __tablename__ = "login_logs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)
+    ip_address: Mapped[str] = mapped_column(String(128), default="unknown")
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class OperationLog(Base):
+    __tablename__ = "operation_logs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    actor_email: Mapped[str] = mapped_column(String(320), default="")
+    action: Mapped[str] = mapped_column(String(128), index=True)
+    target_type: Mapped[str] = mapped_column(String(128), default="")
+    target_id: Mapped[str] = mapped_column(String(128), default="")
+    detail: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)

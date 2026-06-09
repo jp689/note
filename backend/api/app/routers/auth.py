@@ -10,9 +10,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import User
+from ..models import LoginLog, User
 from ..schemas import AuthRequest, AuthResponse, RegisterRequest
-from ..security import create_access_token, hash_password, verify_password
+from ..security import create_access_token, verify_password
 from ..services.pipeline import user_to_profile
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -39,21 +39,32 @@ def _check_auth_rate_limit(request: Request, email: str) -> None:
         attempts.append(now)
 
 
+def _write_login_log(
+    db: Session,
+    request: Request,
+    email: str,
+    *,
+    user: User | None = None,
+    success: bool,
+    failure_reason: str | None = None,
+) -> None:
+    db.add(
+        LoginLog(
+            id=f"login-{uuid4().hex[:12]}",
+            user_id=user.id if user else None,
+            email=email,
+            ip_address=_client_ip(request),
+            success=success,
+            failure_reason=failure_reason,
+        )
+    )
+    db.commit()
+
+
 @router.post("/register", response_model=AuthResponse)
 def register(payload: RegisterRequest, request: Request, db: Session = Depends(get_db)) -> AuthResponse:
     _check_auth_rate_limit(request, payload.email)
-    if db.scalar(select(User).where(User.email == payload.email)):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
-    user = User(
-        id=f"user-{uuid4().hex[:10]}",
-        email=payload.email,
-        full_name=payload.full_name,
-        password_hash=hash_password(payload.password),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return AuthResponse(access_token=create_access_token(user.id), user=user_to_profile(user))
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration is not open")
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -61,7 +72,10 @@ def login(payload: AuthRequest, request: Request, db: Session = Depends(get_db))
     _check_auth_rate_limit(request, payload.email)
     user = db.scalar(select(User).where(User.email == payload.email))
     if user is None or not verify_password(payload.password, user.password_hash):
+        _write_login_log(db, request, payload.email, success=False, failure_reason="Invalid credentials")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.is_active:
+        _write_login_log(db, request, payload.email, user=user, success=False, failure_reason="Account is deactivated")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
+    _write_login_log(db, request, payload.email, user=user, success=True)
     return AuthResponse(access_token=create_access_token(user.id), user=user_to_profile(user))

@@ -63,32 +63,32 @@ export default function AdminDashboardPage() {
 
   const statCards = [
     {
-      label: "总用户数",
+      label: "用户数",
       value: stats.totalUsers,
       icon: "people",
       color: "bg-primary text-on-primary",
-      description: "所有注册用户",
+      description: "平台内全部账户",
     },
     {
-      label: "活跃用户",
-      value: stats.activeUsers,
-      icon: "check_circle",
-      color: "bg-teal text-white",
-      description: "当前状态为激活",
-    },
-    {
-      label: "管理员",
-      value: stats.adminUsers,
-      icon: "admin_panel_settings",
-      color: "bg-ink text-paper",
-      description: "拥有管理权限",
-    },
-    {
-      label: "文档总数",
+      label: "笔记数",
       value: stats.totalDocuments,
       icon: "article",
+      color: "bg-teal text-white",
+      description: "已导入学习笔记",
+    },
+    {
+      label: "AI 调用次数",
+      value: stats.totalAiCalls,
+      icon: "auto_awesome",
+      color: "bg-ink text-paper",
+      description: "后台记录的模型调用",
+    },
+    {
+      label: "文件数",
+      value: stats.totalFiles,
+      icon: "folder_shared",
       color: "bg-saffron text-white",
-      description: "所有已上传文档",
+      description: "已上传文件总量",
     },
   ];
 
@@ -234,26 +234,26 @@ export default function AdminDashboardPage() {
             </Link>
             <Link
               className="ui-card-interactive flex items-center gap-4"
-              href="/"
+              href="/admin/notes"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal/10 text-teal">
-                <LuminaIcon className="text-[26px]" name="dashboard" />
+                <LuminaIcon className="text-[26px]" name="article" />
               </div>
               <div>
-                <p className="font-semibold text-ink">前台首页</p>
-                <p className="text-sm text-on-surface-variant">查看用户端学习控制台</p>
+                <p className="font-semibold text-ink">管理笔记</p>
+                <p className="text-sm text-on-surface-variant">查看、搜索和删除学习笔记</p>
               </div>
             </Link>
             <Link
               className="ui-card-interactive flex items-center gap-4"
-              href="/admin/reports"
+              href="/admin/ai"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container text-on-surface-variant">
-                <LuminaIcon className="text-[26px]" name="insights" />
+                <LuminaIcon className="text-[26px]" name="auto_awesome" />
               </div>
               <div>
-                <p className="font-semibold text-ink">数据报表</p>
-                <p className="text-sm text-on-surface-variant">查看运营数据和关键指标</p>
+                <p className="font-semibold text-ink">AI 管理</p>
+                <p className="text-sm text-on-surface-variant">查看调用记录和 Token 消耗</p>
               </div>
             </Link>
           </div>

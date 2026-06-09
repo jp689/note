@@ -15,6 +15,15 @@ def auth_headers() -> dict[str, str]:
     return {"authorization": f"Bearer {token}"}
 
 
+def admin_headers() -> dict[str, str]:
+    response = client.post(
+        "/api/auth/login",
+        json={"email": "admin@example.com", "password": "admin123"},
+    )
+    token = response.json()["accessToken"]
+    return {"authorization": f"Bearer {token}"}
+
+
 def test_healthcheck() -> None:
     response = client.get("/health")
 
@@ -32,6 +41,86 @@ def test_login_success() -> None:
     payload = response.json()
     assert payload["user"]["email"] == "demo@example.com"
     assert payload["accessToken"].count(".") == 2
+
+
+def test_public_registration_is_disabled() -> None:
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "email": "new-user@example.com",
+            "fullName": "New User",
+            "password": "password123",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Registration is not open"}
+
+
+def test_admin_dashboard_reports_required_metrics() -> None:
+    response = client.get("/api/admin/dashboard", headers=admin_headers())
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["userCount"] >= 2
+    assert payload["noteCount"] >= 1
+    assert payload["aiCallCount"] >= 0
+    assert payload["fileCount"] >= 1
+
+
+def test_admin_notes_files_and_document_delete() -> None:
+    headers = auth_headers()
+    upload_response = client.post(
+        "/api/documents/upload",
+        headers=headers,
+        json={"filename": "admin-managed.pdf", "contentType": "application/pdf", "sizeBytes": 64},
+    )
+    document_id = upload_response.json()["document"]["id"]
+
+    admin = admin_headers()
+    notes_response = client.get("/api/admin/notes?search=admin-managed", headers=admin)
+    files_response = client.get("/api/admin/files?search=admin-managed", headers=admin)
+
+    assert notes_response.status_code == 200
+    assert files_response.status_code == 200
+    assert any(item["id"] == document_id for item in notes_response.json()["items"])
+    file_item = next(item for item in files_response.json()["items"] if item["id"] == document_id)
+    assert file_item["fileName"] == "admin-managed.pdf"
+    assert file_item["parseStatus"] == "uploaded"
+
+    delete_response = client.delete(f"/api/admin/notes/{document_id}", headers=admin)
+    assert delete_response.status_code == 204
+
+    missing_response = client.get(f"/api/documents/{document_id}/status", headers=headers)
+    assert missing_response.status_code == 404
+
+
+def test_admin_ai_settings_and_logs() -> None:
+    admin = admin_headers()
+
+    settings_response = client.patch(
+        "/api/admin/settings",
+        headers=admin,
+        json={"aiEnabled": False, "maxUploadBytes": 12_582_912},
+    )
+    assert settings_response.status_code == 200
+    settings_payload = settings_response.json()
+    assert settings_payload["aiEnabled"] is False
+    assert settings_payload["maxUploadBytes"] == 12_582_912
+
+    ai_response = client.get("/api/admin/ai-usage", headers=admin)
+    logs_response = client.get("/api/admin/logs", headers=admin)
+
+    assert ai_response.status_code == 200
+    ai_payload = ai_response.json()
+    assert "items" in ai_payload
+    assert "totalTokens" in ai_payload
+    assert "failedCount" in ai_payload
+
+    assert logs_response.status_code == 200
+    logs_payload = logs_response.json()
+    assert any(log["action"] == "update_settings" for log in logs_payload["operationLogs"])
+    assert any(log["email"] == "admin@example.com" for log in logs_payload["loginLogs"])
 
 
 def test_generate_quiz_for_seeded_document() -> None:

@@ -1,5 +1,12 @@
 import {
   AdminDetailedStats,
+  AdminDashboard,
+  AdminAiUsageResponse,
+  AdminFileListResponse,
+  AdminLogsResponse,
+  AdminNoteListResponse,
+  AdminSettings,
+  AdminSettingsUpdate,
   AdminStats,
   AdminUserCreate,
   AdminUserListResponse,
@@ -289,6 +296,71 @@ export async function deleteAdminUser(userId: string): Promise<void> {
 
 export async function getAdminDetailedStats(): Promise<AdminDetailedStats> {
   return requestJson<AdminDetailedStats>("/api/admin/stats/detailed");
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboard> {
+  return requestJson<AdminDashboard>("/api/admin/dashboard");
+}
+
+export async function getAdminNotes(
+  page = 1,
+  pageSize = 20,
+  search = ""
+): Promise<AdminNoteListResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+    ...(search ? { search } : {}),
+  });
+  return requestJson<AdminNoteListResponse>(`/api/admin/notes?${params}`);
+}
+
+export async function deleteAdminNote(documentId: string): Promise<void> {
+  await requestJson(`/api/admin/notes/${documentId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getAdminFiles(
+  page = 1,
+  pageSize = 20,
+  search = ""
+): Promise<AdminFileListResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+    ...(search ? { search } : {}),
+  });
+  return requestJson<AdminFileListResponse>(`/api/admin/files?${params}`);
+}
+
+export async function deleteAdminFile(documentId: string): Promise<void> {
+  await requestJson(`/api/admin/files/${documentId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getAdminAiUsage(page = 1, pageSize = 20): Promise<AdminAiUsageResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  return requestJson<AdminAiUsageResponse>(`/api/admin/ai-usage?${params}`);
+}
+
+export async function getAdminSettings(): Promise<AdminSettings> {
+  return requestJson<AdminSettings>("/api/admin/settings");
+}
+
+export async function updateAdminSettings(payload: AdminSettingsUpdate): Promise<AdminSettings> {
+  return requestJson<AdminSettings>("/api/admin/settings", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getAdminLogs(): Promise<AdminLogsResponse> {
+  return requestJson<AdminLogsResponse>("/api/admin/logs");
 }
 
 export async function createAdminUser(payload: AdminUserCreate): Promise<{ id: string; email: string; fullName: string; isAdmin: boolean; isActive: boolean }> {

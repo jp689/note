@@ -189,9 +189,112 @@ export interface AdminDetailedStats {
   activeUsers: number;
   adminUsers: number;
   totalDocuments: number;
+  totalAiCalls: number;
+  totalFiles: number;
   documentsByStatus: Record<string, number>;
   recentDocuments: { id: string; title: string; status: string; createdAt: string }[];
   recentUsers: { id: string; email: string; fullName: string; createdAt: string }[];
+}
+
+export interface AdminDashboard {
+  userCount: number;
+  noteCount: number;
+  aiCallCount: number;
+  fileCount: number;
+}
+
+export interface AdminListMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminNoteItem {
+  id: string;
+  title: string;
+  ownerEmail: string;
+  status: string;
+  pageCount: number;
+  knowledgeCount: number;
+  quizCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminNoteListResponse extends AdminListMeta {
+  items: AdminNoteItem[];
+}
+
+export interface AdminFileItem {
+  id: string;
+  title: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  ownerEmail: string;
+  parseStatus: string;
+  errorMessage?: string | null;
+  uploadedAt: string;
+}
+
+export interface AdminFileListResponse extends AdminListMeta {
+  items: AdminFileItem[];
+}
+
+export interface AdminAiUsageItem {
+  id: string;
+  provider: string;
+  model: string;
+  operation: string;
+  userEmail?: string | null;
+  documentTitle?: string | null;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  status: string;
+  failureReason?: string | null;
+  createdAt: string;
+}
+
+export interface AdminAiUsageResponse extends AdminListMeta {
+  totalTokens: number;
+  failedCount: number;
+  items: AdminAiUsageItem[];
+}
+
+export interface AdminSettings {
+  aiEnabled: boolean;
+  maxUploadBytes: number;
+  updatedAt?: string | null;
+}
+
+export interface AdminSettingsUpdate {
+  aiEnabled?: boolean;
+  maxUploadBytes?: number;
+}
+
+export interface AdminLoginLogItem {
+  id: string;
+  email: string;
+  ipAddress: string;
+  success: boolean;
+  failureReason?: string | null;
+  createdAt: string;
+}
+
+export interface AdminOperationLogItem {
+  id: string;
+  actorEmail: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  detail: string;
+  createdAt: string;
+}
+
+export interface AdminLogsResponse {
+  loginLogs: AdminLoginLogItem[];
+  operationLogs: AdminOperationLogItem[];
 }
 
 export interface AdminUserListResponse {
